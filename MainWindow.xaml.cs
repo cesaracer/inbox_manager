@@ -12,11 +12,10 @@ using Google.Apis.Util.Store;
 
 namespace InboxManager
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
+        //global variables
+      
         List<string> uniqueSenders = new List<string>();
         List<Google.Apis.Gmail.v1.Data.Message> messages = new List<Google.Apis.Gmail.v1.Data.Message>();
         List<string> sendersToDelete = new List<string>();
@@ -33,10 +32,12 @@ namespace InboxManager
 
         public MainWindow()
         {
+            //initializing window and establishing connection to api
             InitialApiCall();
             InitializeComponent();
         }
 
+        //clears all fields and variables
         private void Reset()
         {
             lstSenders.Items.Clear();
@@ -45,6 +46,7 @@ namespace InboxManager
             sendersToDelete.Clear();
         }
 
+        //api is called to retrieve list of messages/senders in inbox
         private void Populate()
         {
             btnRetrieve.IsEnabled = false;
@@ -54,21 +56,25 @@ namespace InboxManager
             txtEmails.Text = messages.Count.ToString();
             for (int i = 0; i < uniqueSenders.Count; i++)
             {
+                //creating checkbox item to add to list
                 CheckBox check = new CheckBox();
                 check.Content = uniqueSenders[i].ToString();
                 lstSenders.Items.Add(check);
             }
             btnRetrieve.IsEnabled = false;
         }
+
         private void GetAllMessages()
         {
             for (int i = 0; i < messages.Count; i++)
             {
                 var message = GetMessage(service, email, messages[i].Id);
+                //reading headers to find sender
                 for (int x = 0; x < message.Payload.Headers.Count; x++)
                 {
                     if (message.Payload.Headers[x].Name == "From")
                     {
+                        //creating list of unique senders
                         messageInfo.Add(message.Id.ToString(), message.Payload.Headers[x].Value.ToString());
                         if (!uniqueSenders.Contains(message.Payload.Headers[x].Value))
                             uniqueSenders.Add(message.Payload.Headers[x].Value);
@@ -78,8 +84,10 @@ namespace InboxManager
             }
         }
 
+        //creates list of senders to delete messages from
         private void CreateDeletionList()
         {
+            //checking list component for checked items and creating list
             List<CheckBox> senders = new List<CheckBox>();
             foreach(CheckBox item in lstSenders.Items)
             {
@@ -89,6 +97,7 @@ namespace InboxManager
                 }
             }
 
+            //using sender emails to create list of message ids to mass delete emails
             for (int i = 0; i < senders.Count; i++)
             {
                 foreach (var item in messageInfo)
@@ -101,6 +110,7 @@ namespace InboxManager
             }
         }
 
+        //initializing connection to api
         private void InitialApiCall()
         {
             UserCredential credential;
@@ -127,6 +137,8 @@ namespace InboxManager
             });
         }
 
+
+        //making api call to mass delete messages
         private void DeleteEmails()
         {
             for (int i = 0; i < sendersToDelete.Count; i++)
@@ -140,7 +152,6 @@ namespace InboxManager
             List<Google.Apis.Gmail.v1.Data.Message> result = new List<Google.Apis.Gmail.v1.Data.Message>();
             UsersResource.MessagesResource.ListRequest request = service.Users.Messages.List(userId);
             request.Q = query;
-
             do
             {
                 try
@@ -172,17 +183,20 @@ namespace InboxManager
             return null;
         }
 
+        //invokes populate function
         private void btnRetrieve_Click(object sender, RoutedEventArgs e)
         {
             Populate();
         }
 
+        //invokes reset function
         private void btnReset_Click(object sender, RoutedEventArgs e)
         {
             Reset();
             btnRetrieve.IsEnabled = true;
         }
 
+        //invokes deletion process
         private void btnDelete_Click(object sender, RoutedEventArgs e)
         {
             if (lstSenders.Items.Count == 0)
